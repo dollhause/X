@@ -3,13 +3,23 @@
 # 	X > Animate
 # 
 # ----------------------------------------------------------------
+# 
+# 	Easing Variables
+# 
+# 	x: percent complete
+# 	t: current time
+# 	b: begInnIng value
+# 	c: change In value
+# 	d: duration
+# 
+# ----------------------------------------------------------------
 define 'X.Animate', ->
 
-	animate = (start, end, duration, easing, callback, complete) ->
+	Animate = (start, end, duration, easing, callback, complete) ->
 
 		duration ?= 0
 
-		easingFunc = animate.easing[easing] or animate.easing.swing;
+		easingFunc = Animate.easing[easing] or Animate.easing.swing;
 
 		startValue = start
 		difference = end - start
@@ -60,10 +70,8 @@ define 'X.Animate', ->
 			pause: pause,
 			stop: stop
 		}
-	
-	#	x: percent complete, t: current time, b: begInnIng value, c: change In value, d: duration
 
-	animate.easing = {
+	Animate.easing = {
 		
 		linear: (x, t, b, c, d) ->
 			return b + (x*c)
@@ -199,7 +207,7 @@ define 'X.Animate', ->
 			return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b
 		
 		easeInBounce: (x, t, b, c, d) ->
-			return c - animate.easing.easeOutBounce(x, d-t, 0, c, d) + b
+			return c - Animate.easing.easeOutBounce(x, d-t, 0, c, d) + b
 
 		easeOutBounce: (x, t, b, c, d) ->
 			if ((t/=d) < (1/2.75))
@@ -212,9 +220,9 @@ define 'X.Animate', ->
 				return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b
 
 		easeInOutBounce: (x, t, b, c, d) ->
-			if (t < d/2) then return animate.easing.easeInBounce(x, t*2, 0, c, d) * .5 + b
-			return animate.easing.easeOutBounce(x, t*2-d, 0, c, d) * .5 + c*.5 + b
+			if (t < d/2) then return Animate.easing.easeInBounce(x, t*2, 0, c, d) * .5 + b
+			return Animate.easing.easeOutBounce(x, t*2-d, 0, c, d) * .5 + c*.5 + b
 
 	}
 
-	return animate
+	return Animate

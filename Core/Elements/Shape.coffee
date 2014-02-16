@@ -9,16 +9,9 @@ define 'X.Shape', ['X.Element'], (Element) ->
 
 		defaults:
 			type: 'shape'
-			connect: true
-			opacity: 1
-			fill: '#000'
-			color: '#000'
-			stroke: 0.25
-
-	class Shapes extends Element.Collection
-
-		model: Shape
-
-	Shape.Collection = Shapes
-
-	return Shape
+			fillColor: 'transparent'
+			fillOpacity: 1
+			strokeColor: 'transparent'
+			strokeWidth: 0
+			strokeCap: 'round'
+			strokeOpacity: 1

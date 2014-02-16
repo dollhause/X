@@ -12,14 +12,9 @@ define 'X.Point', ['X.Element'], (Element) ->
 			x: 0
 			y: 0
 			r: 5
-			fill: '#000'
-			stroke: 0
-			color: '#000'
-
-	class Points extends Element.Collection
-
-		model: Point
-
-	Point.Collection = Points
-
-	return Point
+			fillColor: 'transparent'
+			fillOpacity: 1
+			strokeColor: 'transparent'
+			strokeWidth: 0
+			strokeCap: 'round'
+			strokeOpacity: 1

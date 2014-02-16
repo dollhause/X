@@ -8,22 +8,15 @@ define 'X.Element', ['X.Model', 'X.Collection', 'X.Animate'], (Model, Collection
 	class Element extends Model
 
 		defaults: 
-			type: undefined
+			fillColor: 'transparent'
+			fillOpacity: 1
+			strokeColor: 'transparent'
+			strokeWidth: 0
+			strokeCap: 'round'
+			strokeOpacity: 1
 
 		initialize: ->
 			@elements = new Collection
-
-		created: ->
-			if !@isCreated 
-				@isCreated = true
-				return false
-			else return true
-
-		canvas: (canvas) ->
-			@_canvas = canvas
-			return @
-
-		render: -> return @
 
 		# -------------------------------------------------------
 		# 	Children
@@ -69,14 +62,4 @@ define 'X.Element', ['X.Model', 'X.Collection', 'X.Animate'], (Model, Collection
 			if @_animation? then @_animation.stop()
 			delete @_animation
 			return @
-
-
-	class Elements extends Collection
-
-		model: Element
-
-	Element.Collection = Elements
-
-	return Element
-
 
