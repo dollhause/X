@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html> <!--<![endif]-->
+<head>
+ 	<link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+  	<div id="Canvas"></div>
+  	<script type="text/javascript" src="../X.js"></script>
+  	<script type="text/javascript">
+
+		var el = document.getElementById('Canvas');
+
+		using(['X'], function(X) {
+
+			var shape = new X.Shape({ fillColor: 'red', x: 200, y: 0 });
+
+			shape.add([
+				new X.Point({ x: 100, y: 100, fillColor: 'blue' }), 
+				new X.Point({ x: 0, y: 100, fillColor: 'green' }).add([
+					new X.Point({ x: 10, y: 30, fillColor: 'red' }),
+					new X.Point({ x: -40, y: 0, fillColor: 'red' })
+				]),
+				new X.Point({ x: 0, y: 20, fillColor: 'yellow' }).add([
+					new X.Point({ x: 0, y: -10, fillColor: 'red' }),
+					new X.Point({ x: -40, y: 0, fillColor: 'red' })
+				]),
+				new X.Point({ x: 60, y: 20, fillColor: 'blue' })
+			]);
+
+			window.canvas = new X.Canvas({ height: 600, width: 800 });
+
+			window.onload = function() {
+
+				canvas.trigger('create', el);
+
+				canvas.add(shape).refresh();
+
+			}
+
+		});
+
+
+	</script>
+</body>
+</html>

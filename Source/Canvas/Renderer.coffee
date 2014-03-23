@@ -1,18 +1,23 @@
 # ----------------------------------------------------------------
 #
-# 	X > Canvas > Renderer
+# 	Renderer
 # 
 # ----------------------------------------------------------------
-define 'X.Canvas.Renderer', ['X.View'], (View) ->
+define 'Canvas.Renderer', ['Element', 'Canvas.Point', 'Canvas.Shape'], (Element, Point, Shape) ->
 
-	class CanvasView extends View
+	template = ->
 
-		template: _.template '<canvas height="<%= height %>" width="<%= width %>"></canvas>'
+	class Renderer extends Element
 
-		initialize: ->
+		views:
+			point: Point
+			shape: Shape
+
+		model: (@model) ->
 			@model.on 'create', @create, @
 			@model.on 'render', @render, @
 			@model.on 'change:opacity', @opacity, @
+			@model.on 'change:fillColor', @fillColor, @
 			@model.on 'change:strokeColor', @strokeColor, @
 			@model.on 'change:strokeWidth', @strokeWidth, @
 			@model.on 'change:strokeCap', @strokeCap, @
@@ -20,19 +25,23 @@ define 'X.Canvas.Renderer', ['X.View'], (View) ->
 			@model.on 'moveTo', @moveTo, @
 			@model.on 'lineTo', @lineTo, @
 			@model.on 'arc', @arc, @
+			@model.on 'bezierCurveTo', @bezierCurveTo, @
 			@model.on 'closePath', @closePath, @
 			@model.on 'fill', @fill, @
 			@model.on 'stroke', @stroke, @
 
 		create: (container) ->
-			container.html @template @model.attributes
-			@$el = container.find('canvas').last()
-			@x = @$el[0].getContext('2d')
-			@delegateEvents()
+			@el = document.createElement("canvas");
+			@el.height = @model.get('height');
+			@el.width = @model.get('width');
+			container.appendChild(@el); 
+			@x = @el.getContext('2d')
 
 		render: -> @x.clearRect 0, 0, @model.get('width'), @model.get('height')
 
 		opacity: (a, b) -> @x.globalAlpha = b
+
+		fillColor: (a) -> @x.fillStyle = a
 
 		strokeColor: (a, b) -> @x.strokeStyle = b
 
@@ -48,17 +57,10 @@ define 'X.Canvas.Renderer', ['X.View'], (View) ->
 			
 		arc: (x, y, r, a) -> @x.arc x, y, r, 0, a, false
 
+		bezierCurveTo: (cx1, cy1, cx2, cy2, x2, y2) -> @x.bezierCurveTo cx1, cy1, cx2, cy2, x2, y2
+
 		closePath: -> @x.closePath()
 
 		fill: -> @x.fill()
 
 		stroke: -> @x.stroke()
-
-		events: 
-			'click': (e) ->
-				e.preventDefault()
-				@model.trigger('click')
-
-
-
-

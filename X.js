@@ -10,62 +10,216 @@
         child.__super__ = parent.prototype;
         return child;
     };
-    define("X.Animate", function() {
-        var Animate;
-        Animate = function(start, end, duration, easing, callback, complete) {
-            var animationRequestId, current, difference, easingFunc, lastTime, overclocked, pause, pauseStart, paused, resume, startTime, startValue, step, stop;
-            duration == null && (duration = 0);
-            easingFunc = Animate.easing[easing] || Animate.easing.swing;
-            startValue = start;
-            difference = end - start;
-            current = start;
-            startTime = Date.now();
-            pauseStart = startTime;
-            paused = !0;
-            animationRequestId = void 0;
-            lastTime = Date.now();
-            pause = function() {
-                if (paused) return;
-                paused = !0;
-                cancelAnimationFrame(animationRequestId);
-                return pauseStart = Date.now();
-            };
-            stop = function() {
-                return pause();
-            };
-            resume = function() {
-                if (!paused) return;
-                paused = !1;
-                startTime += Date.now() - pauseStart;
-                return animationRequestId = requestAnimationFrame(step);
-            };
-            overclocked = function() {
-                return !1;
-            };
-            step = function() {
-                var currentTime, x;
-                currentTime = Date.now() - startTime;
-                x = 1 - (duration - currentTime) / duration;
-                if (currentTime < duration && !paused) {
-                    if (!overclocked()) {
-                        current = easingFunc(x, currentTime, start, difference, duration);
-                        callback && callback(current);
-                        lastTime = Date.now();
-                    }
-                    return animationRequestId = requestAnimationFrame(step);
-                }
-                current = easingFunc(x, duration, start, difference, duration);
-                callback && callback(end);
-                return complete && complete();
-            };
-            resume();
-            return {
-                resume: resume,
-                pause: pause,
-                stop: stop
-            };
+    (function() {
+        this.isString = function(value) {
+            return typeof value == "string";
         };
-        Animate.easing = {
+        this.isFunction = function(value) {
+            return typeof value == "function";
+        };
+        this.isObject = function(value) {
+            return typeof value == "object" && isNaN(value.length);
+        };
+        this.isArray = function(value) {
+            return typeof value == "object" && !isNaN(value.length);
+        };
+        this.isNumber = function(value) {
+            return !isNaN(parseInt(value));
+        };
+        this.isntString = function(value) {
+            return !isString(value);
+        };
+        this.isntFunction = function(value) {
+            return !isFunction(value);
+        };
+        this.isntObject = function(value) {
+            return !isObject(value);
+        };
+        this.isntArray = function(value) {
+            return !isArray(value);
+        };
+        return this.isntNumber = function(value) {
+            return !isNumber(value);
+        };
+    })(this);
+    (function() {
+        var slice;
+        slice = Array.prototype.slice;
+        return this.extend = function(obj) {
+            var prop, set, source, val, _i, _len, _ref;
+            set = function(prop, val) {
+                return obj[prop] = val;
+            };
+            _ref = slice.call(arguments, 1);
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                source = _ref[_i];
+                if (source) for (prop in source) {
+                    val = source[prop];
+                    set(prop, val);
+                }
+            }
+            return obj;
+        };
+    })(this);
+    (function() {
+        return this.clone = function(obj) {
+            return isntObject(obj) ? obj : isArray(obj) ? obj.slice() : extend({}, obj);
+        };
+    })(this);
+    (function() {
+        var slice;
+        slice = Array.prototype.slice;
+        return this.Observer = function() {
+            function Observer() {
+                this._listeners = {};
+            }
+            Observer.prototype.on = function(triggers, listener, context) {
+                var bind, trigger, _i, _len, _this = this;
+                triggers = triggers.split(" ");
+                bind = function(trigger) {
+                    var _base;
+                    if (isntFunction(listener)) return;
+                    (_base = _this._listeners)[trigger] == null && (_base[trigger] = []);
+                    return _this._listeners[trigger].push([ listener, context ]);
+                };
+                for (_i = 0, _len = triggers.length; _i < _len; _i++) {
+                    trigger = triggers[_i];
+                    bind(trigger);
+                }
+                return this;
+            };
+            Observer.prototype.trigger = function(triggers) {
+                var args, functions, listener, run, trigger, _i, _j, _len, _len1, _this = this;
+                triggers = triggers.split(" ");
+                for (_i = 0, _len = triggers.length; _i < _len; _i++) {
+                    trigger = triggers[_i];
+                    functions = this._listeners[trigger];
+                    if (functions != null) {
+                        args = slice.call(arguments, 1);
+                        run = function(listener) {
+                            return listener[1] != null ? listener[0].apply(listener[1], args) : listener[0].apply(_this, args);
+                        };
+                        for (_j = 0, _len1 = functions.length; _j < _len1; _j++) {
+                            listener = functions[_j];
+                            run(listener);
+                        }
+                    }
+                }
+                return this;
+            };
+            return Observer;
+        }();
+    })(this);
+    (function() {
+        var AMD, amd;
+        AMD = function(_super) {
+            function AMD() {
+                AMD.__super__.constructor.apply(this, arguments);
+                this.modules = {};
+            }
+            __extends(AMD, _super);
+            AMD.prototype.define = function() {
+                var arg, callback, called, o, _i, _len, _this = this;
+                o = {
+                    dependencies: []
+                };
+                for (_i = 0, _len = arguments.length; _i < _len; _i++) {
+                    arg = arguments[_i];
+                    isString(arg) && (o.name = arg);
+                    isFunction(arg) && (callback = arg);
+                    isArray(arg) && (o.dependencies = arg);
+                }
+                called = !1;
+                o.callback = function(after) {
+                    return called ? after(called) : _this.require(o.dependencies, function() {
+                        called = callback.apply(null, arguments);
+                        return after(called);
+                    });
+                };
+                this.modules[o.name] = o;
+                return this.trigger(o.name);
+            };
+            AMD.prototype.require = function() {
+                var arg, attempt, available, o, run, _i, _len, _this = this;
+                o = {
+                    dependencies: []
+                };
+                for (_i = 0, _len = arguments.length; _i < _len; _i++) {
+                    arg = arguments[_i];
+                    isFunction(arg) && (o.callback = arg);
+                    isArray(arg) && (o.dependencies = arg);
+                }
+                available = [];
+                run = function() {
+                    var a, args, _j, _len1;
+                    args = [];
+                    available.sort(function(a, b) {
+                        return a[1] - b[1];
+                    });
+                    for (_j = 0, _len1 = available.length; _j < _len1; _j++) {
+                        a = available[_j];
+                        a[0].callback(function(called) {
+                            return args.push(called);
+                        });
+                    }
+                    return o.callback.apply(null, args);
+                };
+                attempt = function() {
+                    var dependency, i, _j, _len1, _ref;
+                    available = [];
+                    _ref = o.dependencies;
+                    for (i = _j = 0, _len1 = _ref.length; _j < _len1; i = ++_j) {
+                        dependency = _ref[i];
+                        _this.modules[dependency] ? available.push([ _this.modules[dependency], i ]) : _this.on(dependency, attempt);
+                    }
+                    if (available.length === o.dependencies.length) return run();
+                };
+                return attempt();
+            };
+            return AMD;
+        }(Observer);
+        amd = new AMD;
+        this.using = function() {
+            return amd.require.apply(amd, arguments);
+        };
+        return this.define = function() {
+            return amd.define.apply(amd, arguments);
+        };
+    })(this);
+    define("Point", [ "Element" ], function(Element) {
+        var Point, _ref;
+        return Point = function(_super) {
+            function Point() {
+                _ref = Point.__super__.constructor.apply(this, arguments);
+                return _ref;
+            }
+            __extends(Point, _super);
+            Point.prototype.defaults = extend({
+                type: "point",
+                x: 0,
+                y: 0,
+                r: 5
+            }, Element.prototype.defaults);
+            return Point;
+        }(Element);
+    });
+    define("Shape", [ "Element" ], function(Element) {
+        var Shape, _ref;
+        return Shape = function(_super) {
+            function Shape() {
+                _ref = Shape.__super__.constructor.apply(this, arguments);
+                return _ref;
+            }
+            __extends(Shape, _super);
+            Shape.prototype.defaults = extend({
+                type: "shape"
+            }, Element.prototype.defaults);
+            return Shape;
+        }(Element);
+    });
+    define("Animate", function() {
+        var easing, keyframe;
+        easing = {
             linear: function(x, t, b, c, d) {
                 return b + x * c;
             },
@@ -205,17 +359,32 @@
                 return t < d / 2 ? Animate.easing.easeInBounce(x, t * 2, 0, c, d) * .5 + b : Animate.easing.easeOutBounce(x, t * 2 - d, 0, c, d) * .5 + c * .5 + b;
             }
         };
-        return Animate;
+        return keyframe = function(x, options) {
+            easing;
+            var currentTime;
+            currentTime = Date.now() - startTime;
+            x = 1 - (duration - currentTime) / duration;
+            return easingFunc(x, currentTime, start, difference, duration);
+        };
     });
-    define("X.Element", [ "X.Model", "X.Collection", "X.Animate" ], function(Model, Collection, Animate) {
-        var Element, _ref;
+    define("Element", function() {
+        var Element, array, id;
+        id = 0;
+        array = function(val) {
+            return isArray(val) ? val : [ val ];
+        };
         return Element = function(_super) {
-            function Element() {
-                _ref = Element.__super__.constructor.apply(this, arguments);
-                return _ref;
+            function Element(attributes, isClone) {
+                Element.__super__.constructor.apply(this, arguments);
+                this.children = [];
+                isClone ? this.attributes = attributes : this.attributes = extend(clone(this.defaults), attributes, {
+                    id: id++
+                });
             }
             __extends(Element, _super);
             Element.prototype.defaults = {
+                x: 0,
+                y: 0,
                 fillColor: "transparent",
                 fillOpacity: 1,
                 strokeColor: "transparent",
@@ -223,64 +392,59 @@
                 strokeCap: "round",
                 strokeOpacity: 1
             };
-            Element.prototype.initialize = function() {
-                return this.elements = new Collection;
+            Element.prototype.get = function(attr) {
+                return this.attributes[attr];
+            };
+            Element.prototype.set = function(attrs) {
+                extend(this.attributes, attrs);
+                return this;
+            };
+            Element.prototype.is = function(model) {
+                return this.attributes.id === model.attributes.id;
             };
             Element.prototype.add = function(models) {
-                var model, _i, _len;
-                typeof models != "object" && !models.length && (models = [ models ]);
+                var child, clone, model, _i, _j, _len, _len1, _ref;
+                models = array(models);
                 for (_i = 0, _len = models.length; _i < _len; _i++) {
                     model = models[_i];
-                    model.canvas(this._canvas).trigger("create");
-                }
-                this.elements.add(models);
-                return this;
-            };
-            Element.prototype.remove = function(models) {
-                this.elements.remove(models);
-                return this;
-            };
-            Element.prototype.select = function(type) {
-                var collection;
-                collection = new Collection;
-                return collection.add(this.elements.where({
-                    type: type
-                }));
-            };
-            Element.prototype.last = function() {
-                return this.elements.last();
-            };
-            Element.prototype.empty = function() {
-                this.elements.reset();
-                return this;
-            };
-            Element.prototype.animate = function(options, duration, easing, callback) {
-                var end, start, _this = this;
-                duration = duration || 400;
-                for (start in options) {
-                    end = options[start];
-                    this._canvas.animate();
-                    this._animation = Animate(this.get(start), end, duration, easing, function(c) {
-                        var o;
-                        o = {};
-                        o[start] = c;
-                        return _this.set(o);
-                    }, function() {
-                        _this._canvas.animated();
-                        return delete _this._animation;
-                    });
+                    clone = new model.constructor(model.attributes, !0);
+                    clone.on("remove", this.remove, this);
+                    _ref = model.children;
+                    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                        child = _ref[_j];
+                        clone.add(child);
+                    }
+                    this.children.push(clone);
                 }
                 return this;
             };
-            Element.prototype.stop = function() {
-                this._animation != null && this._animation.stop();
-                delete this._animation;
-                return this;
+            Element.prototype.has = function(model) {
+                var child, has, _i, _len, _ref;
+                has = !1;
+                _ref = this.children;
+                for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                    child = _ref[_i];
+                    if (child.is(model)) {
+                        has = !0;
+                        break;
+                    }
+                }
+                return has;
+            };
+            Element.prototype.find = function(type) {
+                var child, result, _i, _len, _ref;
+                result = [];
+                _ref = this.children;
+                for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                    child = _ref[_i];
+                    child.get("type") === type && result.push(child);
+                }
+                return result;
             };
             return Element;
-        }(Model);
+        }(Observer);
     });
-    define("X.Point", [ "X.Element" ], function(Element) {
+    define("Canvas.Point", [ "Element" ], function(Element) {
         var Point, _ref;
         return Point = function(_super) {
             function Point() {
@@ -288,22 +452,17 @@
                 return _ref;
             }
             __extends(Point, _super);
-            Point.prototype.defaults = {
-                type: "point",
-                x: 0,
-                y: 0,
-                r: 5,
-                fillColor: "transparent",
-                fillOpacity: 1,
-                strokeColor: "transparent",
-                strokeWidth: 0,
-                strokeCap: "round",
-                strokeOpacity: 1
+            Point.prototype.model = function(model) {
+                this.model = model;
+                return this.model.on("render", this.render, this);
+            };
+            Point.prototype.render = function(canvas, x, y) {
+                return canvas.trigger("beginPath arc fill closePath", this.model.get("x") + x, this.model.get("y") + y, this.model.get("r"), 2 * Math.PI);
             };
             return Point;
         }(Element);
     });
-    define("X.Shape", [ "X.Element" ], function(Element) {
+    define("Canvas.Shape", [ "Element" ], function(Element) {
         var Shape, _ref;
         return Shape = function(_super) {
             function Shape() {
@@ -311,45 +470,163 @@
                 return _ref;
             }
             __extends(Shape, _super);
-            Shape.prototype.defaults = {
-                type: "shape",
-                fillColor: "transparent",
-                fillOpacity: 1,
-                strokeColor: "transparent",
-                strokeWidth: 0,
-                strokeCap: "round",
-                strokeOpacity: 1
+            Shape.prototype.model = function(model) {
+                this.model = model;
+                return this.model.on("render", this.render, this);
+            };
+            Shape.prototype.render = function(canvas, x, y) {
+                var i, length, next, point, points, prev, _i, _len;
+                points = this.model.find("point");
+                length = points.length - 1;
+                x += this.model.get("x");
+                y += this.model.get("y");
+                for (i = _i = 0, _len = points.length; _i < _len; i = ++_i) {
+                    point = points[i];
+                    if (i === 0) canvas.trigger("moveTo", point.get("x") + x, point.get("y") + y); else if (i !== length) {
+                        prev = points[i - 1].find("point");
+                        next = point.find("point");
+                        prev.length === 2 && next.length === 2 ? canvas.trigger("bezierCurveTo", points[i - 1].get("x") + prev[1].get("x") + x, points[i - 1].get("y") + prev[1].get("y") + y, point.get("x") + next[0].get("x") + x, point.get("y") + next[0].get("y") + y, point.get("x") + x, point.get("y") + y) : prev.length === 2 ? canvas.trigger("bezierCurveTo", points[i - 1].get("x") + prev[1].get("x") + x, points[i - 1].get("y") + prev[1].get("y") + y, point.get("x") + x, point.get("y") + y, point.get("x") + x, point.get("y") + y) : next.length === 2 ? canvas.trigger("bezierCurveTo", points[i - 1].get("x") + x, points[i - 1].get("y") + y, point.get("x") + next[0].get("x") + x, point.get("y") + next[0].get("y") + y, point.get("x") + x, point.get("y") + y) : canvas.trigger("lineTo", point.get("x") + x, point.get("y") + y);
+                    } else {
+                        canvas.trigger("lineTo", point.get("x") + x, point.get("y") + y);
+                        canvas.trigger("lineTo", points[0].get("x") + x, points[0].get("y") + y);
+                    }
+                }
+                return canvas.trigger("fill closePath");
             };
             return Shape;
         }(Element);
     });
-    define("X.Canvas", [ "X.Element", "X.Canvas.Renderer" ], function(Element, Renderer) {
-        var Canvas, _ref;
-        return Canvas = function(_super) {
-            function Canvas() {
-                _ref = Canvas.__super__.constructor.apply(this, arguments);
+    define("Canvas.Renderer", [ "Element", "Canvas.Point", "Canvas.Shape" ], function(Element, Point, Shape) {
+        var Renderer, template, _ref;
+        template = function() {};
+        return Renderer = function(_super) {
+            function Renderer() {
+                _ref = Renderer.__super__.constructor.apply(this, arguments);
                 return _ref;
             }
+            __extends(Renderer, _super);
+            Renderer.prototype.views = {
+                point: Point,
+                shape: Shape
+            };
+            Renderer.prototype.model = function(model) {
+                this.model = model;
+                this.model.on("create", this.create, this);
+                this.model.on("render", this.render, this);
+                this.model.on("change:opacity", this.opacity, this);
+                this.model.on("change:fillColor", this.fillColor, this);
+                this.model.on("change:strokeColor", this.strokeColor, this);
+                this.model.on("change:strokeWidth", this.strokeWidth, this);
+                this.model.on("change:strokeCap", this.strokeCap, this);
+                this.model.on("beginPath", this.beginPath, this);
+                this.model.on("moveTo", this.moveTo, this);
+                this.model.on("lineTo", this.lineTo, this);
+                this.model.on("arc", this.arc, this);
+                this.model.on("bezierCurveTo", this.bezierCurveTo, this);
+                this.model.on("closePath", this.closePath, this);
+                this.model.on("fill", this.fill, this);
+                return this.model.on("stroke", this.stroke, this);
+            };
+            Renderer.prototype.create = function(container) {
+                this.el = document.createElement("canvas");
+                this.el.height = this.model.get("height");
+                this.el.width = this.model.get("width");
+                container.appendChild(this.el);
+                return this.x = this.el.getContext("2d");
+            };
+            Renderer.prototype.render = function() {
+                return this.x.clearRect(0, 0, this.model.get("width"), this.model.get("height"));
+            };
+            Renderer.prototype.opacity = function(a, b) {
+                return this.x.globalAlpha = b;
+            };
+            Renderer.prototype.fillColor = function(a) {
+                return this.x.fillStyle = a;
+            };
+            Renderer.prototype.strokeColor = function(a, b) {
+                return this.x.strokeStyle = b;
+            };
+            Renderer.prototype.strokeWidth = function(a, b) {
+                return this.x.lineWidth = b;
+            };
+            Renderer.prototype.strokeCap = function(a, b) {
+                return this.x.lineCap = b;
+            };
+            Renderer.prototype.beginPath = function() {
+                return this.x.beginPath();
+            };
+            Renderer.prototype.moveTo = function(x, y) {
+                return this.x.moveTo(x, y);
+            };
+            Renderer.prototype.lineTo = function(x, y) {
+                return this.x.lineTo(x, y);
+            };
+            Renderer.prototype.arc = function(x, y, r, a) {
+                return this.x.arc(x, y, r, 0, a, !1);
+            };
+            Renderer.prototype.bezierCurveTo = function(cx1, cy1, cx2, cy2, x2, y2) {
+                return this.x.bezierCurveTo(cx1, cy1, cx2, cy2, x2, y2);
+            };
+            Renderer.prototype.closePath = function() {
+                return this.x.closePath();
+            };
+            Renderer.prototype.fill = function() {
+                return this.x.fill();
+            };
+            Renderer.prototype.stroke = function() {
+                return this.x.stroke();
+            };
+            return Renderer;
+        }(Element);
+    });
+    define("Canvas", [ "Element", "Canvas.Renderer" ], function(Element, Renderer) {
+        var Canvas, add, array;
+        array = function(val) {
+            return isArray(val) ? val : [ val ];
+        };
+        add = function(models) {
+            var child, clone, model, view, _i, _j, _len, _len1, _ref, _results;
+            models = array(models);
+            _results = [];
+            for (_i = 0, _len = models.length; _i < _len; _i++) {
+                model = models[_i];
+                clone = new model.constructor(model.attributes, !0);
+                view = Renderer.prototype.views[model.get("type")];
+                (new view).model(clone);
+                clone.on("remove", this.remove, this).on("animate", this.animate, this).on("animated", this.animated, this).on("add", this.view, this);
+                _ref = model.children;
+                for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                    child = _ref[_j];
+                    add.call(clone, child);
+                }
+                _results.push(this.children.push(clone));
+            }
+            return _results;
+        };
+        return Canvas = function(_super) {
+            function Canvas() {
+                Canvas.__super__.constructor.apply(this, arguments);
+                (new Renderer).model(this);
+                this.on("change:animating", this.animates);
+                this.on("animating", this.animating);
+                this.on("render", this.render);
+            }
             __extends(Canvas, _super);
-            Canvas.prototype.defaults = {
+            Canvas.prototype.defaults = extend({
                 width: void 0,
                 height: void 0,
                 animating: 0,
-                opacity: 1,
-                fillColor: "transparent",
-                fillOpacity: 1,
-                strokeColor: "transparent",
-                strokeWidth: 0,
-                strokeCap: "round",
-                strokeOpacity: 1
-            };
-            Canvas.prototype.initialize = function() {
-                Canvas.__super__.initialize.apply(this, arguments);
-                new Renderer({
-                    model: this
-                });
-                this.on("render", this.render);
-                return this.on("change:animating", this.animating);
+                opacity: 1
+            }, Element.prototype.defaults);
+            Canvas.prototype.set = function(attrs) {
+                var current, key, prev;
+                for (key in attrs) {
+                    current = attrs[key];
+                    prev = this.attributes[key];
+                    this.attributes[key] = current;
+                    current !== prev && this.trigger("change:" + key + " change", current, prev);
+                }
+                return this;
             };
             Canvas.prototype.animate = function() {
                 return this.set({
@@ -361,152 +638,44 @@
                     animating: this.get("animating") - 1
                 });
             };
-            Canvas.prototype.animating = function() {
-                if (this.get("animating") && !this.previous("animating")) return this.trigger("render");
+            Canvas.prototype.animates = function(animating, previous) {
+                if (animating && previous === 0) return this.trigger("animating");
             };
-            Canvas.prototype.render = function() {
+            Canvas.prototype.animating = function() {
                 var _this = this;
-                this.elements.each(function(m) {
-                    _this.set(m.attributes);
-                    return m.trigger("render", _this);
-                });
                 if (this.get("animating")) return requestAnimationFrame(function() {
-                    return _this.trigger("render");
+                    return _this.trigger("render animating", _this, 0, 0);
                 });
             };
             Canvas.prototype.refresh = function() {
-                return this.animate().animated();
+                return this.trigger("render", this, 0, 0);
+            };
+            Canvas.prototype.render = function(model, x, y) {
+                var child, _i, _len, _ref, _results;
+                x += model.get("x");
+                y += model.get("y");
+                _ref = model.children;
+                _results = [];
+                for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                    child = _ref[_i];
+                    this.set(child.attributes);
+                    child.trigger("render", this, x, y);
+                    _results.push(this.render(child, x, y));
+                }
+                return _results;
+            };
+            Canvas.prototype.add = function(models) {
+                add.call(this, models);
+                return this;
             };
             return Canvas;
         }(Element);
     });
-    define("X.Canvas.Renderer", [ "X.View" ], function(View) {
-        var CanvasView, _ref;
-        return CanvasView = function(_super) {
-            function CanvasView() {
-                _ref = CanvasView.__super__.constructor.apply(this, arguments);
-                return _ref;
-            }
-            __extends(CanvasView, _super);
-            CanvasView.prototype.template = _.template('<canvas height="<%= height %>" width="<%= width %>"></canvas>');
-            CanvasView.prototype.initialize = function() {
-                this.model.on("create", this.create, this);
-                this.model.on("render", this.render, this);
-                this.model.on("change:opacity", this.opacity, this);
-                this.model.on("change:strokeColor", this.strokeColor, this);
-                this.model.on("change:strokeWidth", this.strokeWidth, this);
-                this.model.on("change:strokeCap", this.strokeCap, this);
-                this.model.on("beginPath", this.beginPath, this);
-                this.model.on("moveTo", this.moveTo, this);
-                this.model.on("lineTo", this.lineTo, this);
-                this.model.on("arc", this.arc, this);
-                this.model.on("closePath", this.closePath, this);
-                this.model.on("fill", this.fill, this);
-                return this.model.on("stroke", this.stroke, this);
-            };
-            CanvasView.prototype.create = function(container) {
-                container.html(this.template(this.model.attributes));
-                this.$el = container.find("canvas").last();
-                this.x = this.$el[0].getContext("2d");
-                return this.delegateEvents();
-            };
-            CanvasView.prototype.render = function() {
-                return this.x.clearRect(0, 0, this.model.get("width"), this.model.get("height"));
-            };
-            CanvasView.prototype.opacity = function(a, b) {
-                return this.x.globalAlpha = b;
-            };
-            CanvasView.prototype.strokeColor = function(a, b) {
-                return this.x.strokeStyle = b;
-            };
-            CanvasView.prototype.strokeWidth = function(a, b) {
-                return this.x.lineWidth = b;
-            };
-            CanvasView.prototype.strokeCap = function(a, b) {
-                return this.x.lineCap = b;
-            };
-            CanvasView.prototype.beginPath = function() {
-                return this.x.beginPath();
-            };
-            CanvasView.prototype.moveTo = function(x, y) {
-                return this.x.moveTo(x, y);
-            };
-            CanvasView.prototype.lineTo = function(x, y) {
-                return this.x.lineTo(x, y);
-            };
-            CanvasView.prototype.arc = function(x, y, r, a) {
-                return this.x.arc(x, y, r, 0, a, !1);
-            };
-            CanvasView.prototype.closePath = function() {
-                return this.x.closePath();
-            };
-            CanvasView.prototype.fill = function() {
-                return this.x.fill();
-            };
-            CanvasView.prototype.stroke = function() {
-                return this.x.stroke();
-            };
-            CanvasView.prototype.events = {
-                click: function(e) {
-                    e.preventDefault();
-                    return this.model.trigger("click");
-                }
-            };
-            return CanvasView;
-        }(View);
-    });
-    define("X.Canvas.Point", [ "X.View" ], function(View) {
-        var PointView, _ref;
-        return PointView = function(_super) {
-            function PointView() {
-                _ref = PointView.__super__.constructor.apply(this, arguments);
-                return _ref;
-            }
-            __extends(PointView, _super);
-            PointView.prototype.initialize = function() {
-                return this.on("render", this.render, this);
-            };
-            PointView.prototype.render = function(canvas) {
-                return canvas.trigger("beginPath arc fill closePath", this.model.get("x"), this.model.get("y"), this.model.get("r"), 2 * Math.PI);
-            };
-            return PointView;
-        }(View);
-    });
-    define("X.Canvas.Shape", [ "X.View" ], function(View) {
-        var ShapeView, _ref;
-        return ShapeView = function(_super) {
-            function ShapeView() {
-                _ref = ShapeView.__super__.constructor.apply(this, arguments);
-                return _ref;
-            }
-            __extends(ShapeView, _super);
-            ShapeView.prototype.initialize = function() {
-                return this.model.on("render", this.render, this);
-            };
-            ShapeView.prototype.render = function(canvas) {
-                var i, length, point, points, _i, _len;
-                points = this.model.elements.select("point");
-                length = points.length - 1;
-                canvas.trigger("beginPath");
-                for (i = _i = 0, _len = points.length; _i < _len; i = ++_i) {
-                    point = points[i];
-                    if (i === 0) canvas.trigger("moveTo", point.get("x"), point.get("y")); else if (i !== length) canvas.trigger("lineTo", point.get("x"), point.get("y")); else {
-                        canvas.trigger("lineTo", point.get("x"), point.get("y"));
-                        canvas.trigger("lineTo", points[0].get("x"), points[0].get("y"));
-                    }
-                }
-                return canvas.trigger("fill closePath");
-            };
-            return ShapeView;
-        }(View);
-    });
-    define("X", [ "X.Animate", "X.Element", "X.Point", "X.Shape", "X.Canvas" ], function(Animate, Element, Point, Shape, Canvas) {
+    define("X", [ "Canvas", "Point", "Shape" ], function(Canvas, Point, Shape) {
         return {
-            Animate: Animate,
-            Element: Element,
+            Canvas: Canvas,
             Point: Point,
-            Shape: Shape,
-            Canvas: Canvas
+            Shape: Shape
         };
     });
 }).call(this);

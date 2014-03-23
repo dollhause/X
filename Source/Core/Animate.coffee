@@ -3,136 +3,61 @@
 # 	X > Animate
 # 
 # ----------------------------------------------------------------
-# 
-# 	Easing Variables
-# 
-# 	x: percent complete
-# 	t: current time
-# 	b: begInnIng value
-# 	c: change In value
-# 	d: duration
-# 
-# ----------------------------------------------------------------
-define 'X.Animate', ->
+define 'Animate', ->
 
-	Animate = (start, end, duration, easing, callback, complete) ->
+	# 	x: percent complete
+	# 	t: current time --------------------
+	# 	b: begInnIng value
+	# 	c: change In value
+	# 	d: duration ------------------------
 
-		duration ?= 0
-
-		easingFunc = Animate.easing[easing] or Animate.easing.swing;
-
-		startValue = start
-		difference = end - start
-		current = start
-		startTime = Date.now()
-		pauseStart = startTime
-		paused = true
-		animationRequestId = undefined
-		lastTime = Date.now()
-
-		pause = ->
-			if paused then return
-			paused = true
-			cancelAnimationFrame(animationRequestId)	
-			pauseStart = Date.now()
-
-		stop = ->
-			pause()
-
-		resume = ->
-			if !paused then return
-			paused = false
-			startTime += Date.now() - pauseStart
-			animationRequestId = requestAnimationFrame(step)
-
-		overclocked = ->
-			# return 1000/(Date.now() - lastTime) > 60
-			return false 
-
-		step = ->
-			currentTime = Date.now() - startTime
-			x = 1 - ((duration - currentTime)/duration)
-			if currentTime < duration && !paused
-				if !overclocked()
-					current = easingFunc(x, currentTime, start, difference, duration)
-					callback && callback(current)
-					lastTime = Date.now()
-				animationRequestId = requestAnimationFrame(step)
-			else
-				current = easingFunc(x, duration, start, difference, duration)
-				callback && callback(end)
-				complete && complete()
-
-		resume()
-
-		return {
-			resume: resume,
-			pause: pause,
-			stop: stop
-		}
-
-	Animate.easing = {
+	easing =
 		
-		linear: (x, t, b, c, d) ->
-			return b + (x*c)
+		linear: (x, t, b, c, d) -> return b + (x*c)
 		
-		swing: (x, t, b, c, d) ->
-			return b + ((0.5 - Math.cos(x * Math.PI ) / 2) * c)
+		swing: (x, t, b, c, d) -> return b + ((0.5 - Math.cos(x * Math.PI ) / 2) * c)
 
-		easeInQuad: (x, t, b, c, d) ->
-			return c*(t/=d)*t + b
+		easeInQuad: (x, t, b, c, d) -> return c*(t/=d)*t + b
 		
-		easeOutQuad: (x, t, b, c, d) ->
-			return -c *(t/=d)*(t-2) + b
+		easeOutQuad: (x, t, b, c, d) -> return -c *(t/=d)*(t-2) + b
 		
 		easeInOutQuad: (x, t, b, c, d) ->
 			if ((t/=d/2) < 1) then return c/2*t*t + b
 			return -c/2 * ((--t)*(t-2) - 1) + b
 		
-		easeInCubic: (x, t, b, c, d) ->
-			return c*(t/=d)*t*t + b
+		easeInCubic: (x, t, b, c, d) -> return c*(t/=d)*t*t + b
 		
-		easeOutCubic: (x, t, b, c, d) ->
-			return c*((t=t/d-1)*t*t + 1) + b
+		easeOutCubic: (x, t, b, c, d) -> return c*((t=t/d-1)*t*t + 1) + b
 		
 		easeInOutCubic: (x, t, b, c, d) ->
 			if ((t/=d/2) < 1) then return c/2*t*t*t + b
 			return c/2*((t-=2)*t*t + 2) + b
 		
-		easeInQuart: (x, t, b, c, d) ->
-			return c*(t/=d)*t*t*t + b
+		easeInQuart: (x, t, b, c, d) -> return c*(t/=d)*t*t*t + b
 		
-		easeOutQuart: (x, t, b, c, d) ->
-			return -c * ((t=t/d-1)*t*t*t - 1) + b
+		easeOutQuart: (x, t, b, c, d) -> return -c * ((t=t/d-1)*t*t*t - 1) + b
 		
 		easeInOutQuart: (x, t, b, c, d) ->
 			if ((t/=d/2) < 1) then return c/2*t*t*t*t + b
 			return -c/2 * ((t-=2)*t*t*t - 2) + b
 		
-		easeInQuint: (x, t, b, c, d) ->
-			return c*(t/=d)*t*t*t*t + b
+		easeInQuint: (x, t, b, c, d) -> return c*(t/=d)*t*t*t*t + b
 		
-		easeOutQuint: (x, t, b, c, d) ->
-			return c*((t=t/d-1)*t*t*t*t + 1) + b
+		easeOutQuint: (x, t, b, c, d) -> return c*((t=t/d-1)*t*t*t*t + 1) + b
 		
 		easeInOutQuint: (x, t, b, c, d) ->
 			if ((t/=d/2) < 1) then return c/2*t*t*t*t*t + b
 			return c/2*((t-=2)*t*t*t*t + 2) + b
 		
-		easeInSine: (x, t, b, c, d) ->
-			return -c * Math.cos(t/d * (Math.PI/2)) + c + b
+		easeInSine: (x, t, b, c, d) -> return -c * Math.cos(t/d * (Math.PI/2)) + c + b
 		
-		easeOutSine: (x, t, b, c, d) ->
-			return c * Math.sin(t/d * (Math.PI/2)) + b
+		easeOutSine: (x, t, b, c, d) -> return c * Math.sin(t/d * (Math.PI/2)) + b
 		
-		easeInOutSine: (x, t, b, c, d) ->
-			return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b
+		easeInOutSine: (x, t, b, c, d) -> return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b
 		
-		easeInExpo: (x, t, b, c, d) ->
-			return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b
+		easeInExpo: (x, t, b, c, d) -> return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b
 		
-		easeOutExpo: (x, t, b, c, d) ->
-			return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b
+		easeOutExpo: (x, t, b, c, d) -> return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b
 		
 		easeInOutExpo: (x, t, b, c, d) ->
 			if (t==0) then return b;
@@ -140,11 +65,9 @@ define 'X.Animate', ->
 			if ((t/=d/2) < 1) then return c/2 * Math.pow(2, 10 * (t - 1)) + b
 			return c/2 * (-Math.pow(2, -10 * --t) + 2) + b
 		
-		easeInCirc: (x, t, b, c, d) ->
-			return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b
+		easeInCirc: (x, t, b, c, d) -> return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b
 		
-		easeOutCirc: (x, t, b, c, d) ->
-			return c * Math.sqrt(1 - (t=t/d-1)*t) + b
+		easeOutCirc: (x, t, b, c, d) -> return c * Math.sqrt(1 - (t=t/d-1)*t) + b
 		
 		easeInOutCirc: (x, t, b, c, d) ->
 			if ((t/=d/2) < 1) then return -c/2 * (Math.sqrt(1 - t*t) - 1) + b
@@ -206,8 +129,7 @@ define 'X.Animate', ->
 			if ((t/=d/2) < 1) then return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b
 			return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b
 		
-		easeInBounce: (x, t, b, c, d) ->
-			return c - Animate.easing.easeOutBounce(x, d-t, 0, c, d) + b
+		easeInBounce: (x, t, b, c, d) -> return c - Animate.easing.easeOutBounce(x, d-t, 0, c, d) + b
 
 		easeOutBounce: (x, t, b, c, d) ->
 			if ((t/=d) < (1/2.75))
@@ -223,6 +145,16 @@ define 'X.Animate', ->
 			if (t < d/2) then return Animate.easing.easeInBounce(x, t*2, 0, c, d) * .5 + b
 			return Animate.easing.easeOutBounce(x, t*2-d, 0, c, d) * .5 + c*.5 + b
 
-	}
 
-	return Animate
+	# animate 400
+
+	keyframe = (x, options) ->
+
+		easing 
+
+		currentTime = Date.now() - startTime
+		x = 1 - ((duration - currentTime)/duration)
+
+		easingFunc(x, currentTime, start, difference, duration)
+
+		
